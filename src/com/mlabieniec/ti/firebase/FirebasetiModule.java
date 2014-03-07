@@ -35,11 +35,11 @@ public class FirebasetiModule extends KrollModule
 {
 	//The firebase account URL
 	@Kroll.constant
-	public static final String FIREBASE_URL = "https://sntest.firebaseIO.com";
+	public static final String FIREBASE_URL = "";
 	
 	//The firebase authentication secret
 	@Kroll.constant
-	public static final String FIREBASE_AUTH = "fkHlMEpFkhLdKTLNHULJb3w4G85USKUxZKWOc4Iz";
+	public static final String FIREBASE_AUTH = "";
 	
 	// Standard Debugging variables
 	private static final String TAG = "Firebase";
