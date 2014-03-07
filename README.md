@@ -1,4 +1,4 @@
-### Titanium Firebase Module for Android**
+### Titanium Firebase Module for Android
 
 ## Titanium Studio
 Compile the module into your titanium project. From Titanium Studio, in the app explorer,  Click "Publish" and "Package Android Module". This will compile and package into your Titanium Project.
