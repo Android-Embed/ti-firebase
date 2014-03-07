@@ -1,0 +1,18 @@
+#
+# this is your module manifest and used by Titanium
+# during compilation, packaging, distribution, etc.
+#
+version: 0.0.1
+apiversion: 2
+description: My module
+author: Michael Labieniec
+license: GPL
+copyright: 2014
+
+
+# these should not be edited
+name: firebaseti
+moduleid: com.mlabieniec.ti.firebase
+guid: 42f7877b-34d6-4925-ac90-efdc1083d14d
+platform: android
+minsdk: 3.1.3.GA
