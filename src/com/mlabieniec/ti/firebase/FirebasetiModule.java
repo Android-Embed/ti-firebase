@@ -7,6 +7,7 @@
  */
 package com.mlabieniec.ti.firebase;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -19,6 +20,8 @@ import org.appcelerator.kroll.annotations.Kroll;
 
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.kroll.common.Log;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import android.app.Activity;
 import android.widget.Toast;
@@ -29,23 +32,25 @@ import com.firebase.client.Firebase.AuthListener;
 import com.firebase.client.Firebase.CompletionListener;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
+import com.google.gson.Gson;
 
 @Kroll.module(name="Firebaseti", id="com.mlabieniec.ti.firebase")
 public class FirebasetiModule extends KrollModule
 {
 	//The firebase account URL
-	@Kroll.constant
-	public static final String FIREBASE_URL = "";
+	//@Kroll.property
+	//public String FIREBASE_URL;
 	
 	//The firebase authentication secret
-	@Kroll.constant
-	public static final String FIREBASE_AUTH = "";
+	//@Kroll.property
+	//public String FIREBASE_AUTH;
 	
 	// Standard Debugging variables
 	private static final String TAG = "Firebase";
 	
 	private Firebase events;
 	private ValueEventListener connectedListener;
+	private DataSnapshot data;
 	
 	// The JavaScript callbacks (KrollCallback objects)
 	private KrollFunction successCallback = null;
@@ -222,26 +227,44 @@ public class FirebasetiModule extends KrollModule
 	}
 	
 	@Kroll.method
-	public void init(String ref) 
+	public void init(String FIREBASE_URL, 
+			String FIREBASE_AUTH, 
+			String ref, 
+			KrollFunction callback, 
+			@Kroll.argument(optional = true) KrollFunction change) 
 	{
+		final KrollFunction changeHandler = change;
+		Log.d(TAG,"Firebase.init: " + FIREBASE_URL + "/" + ref);
 		// Create a reference to a Firebase location
+		final KrollFunction cb = callback;
 		events = new Firebase(FIREBASE_URL).child(ref);
 		events.auth(FIREBASE_AUTH, new AuthListener() {
 			
 			@Override
 			public void onAuthSuccess(Object arg) {
 				Log.d(TAG,"Firebase.onAuthSuccess: " + arg.toString());
+				HashMap<String, Object> args = new HashMap<String, Object>();
+				args.put("callback", cb);
+				args.put("data", arg.toString());
+				callThisCallbackDirectly(args);
 			}
 			
 			@Override
 			public void onAuthRevoked(FirebaseError arg) {
 				Log.d(TAG,"Firebase.onAuthSuccess: " + arg.getMessage());
-				
+				HashMap<String, Object> args = new HashMap<String, Object>();
+				args.put("callback", cb);
+				args.put("data", arg.getMessage());
+				callThisCallbackDirectly(args);
 			}
 			
 			@Override
 			public void onAuthError(FirebaseError arg) {
 				Log.d(TAG,"Firebase.onAuthSuccess: " + arg.getMessage());
+				HashMap<String, Object> args = new HashMap<String, Object>();
+				args.put("callback", cb);
+				args.put("data", arg.getMessage());
+				callThisCallbackDirectly(args);
 				
 			}
 		});
@@ -252,7 +275,18 @@ public class FirebasetiModule extends KrollModule
 		    @Override
 		    public void onDataChange(DataSnapshot snap) {
 		        Log.d(TAG,snap.getName() + " -> " + snap.getValue());
-		        setPropertyAndFire(snap.getName(),snap.getValue());
+		        data = snap;
+		        if (changeHandler != null) {
+		        	HashMap<String, Object> args = new HashMap<String, Object>();
+		        	//JSONArray json = new JSONArray(Arrays.asList(snap.getValue()));
+		        	String json = new Gson().toJson(snap.getValue());
+		        	args.put("callback", changeHandler);
+					args.put("data", json);
+					callThisCallbackDirectly(args);
+		        } 
+		        //else {
+		        //	setPropertyAndFire(snap.getName(),snap.getValue());
+		        //}
 		    }
 	
 			@Override
@@ -321,13 +355,39 @@ public class FirebasetiModule extends KrollModule
 	}
 	
 	/**
+	 * Delete a value
+	 * @param path String
+	 */
+	@Kroll.method
+	public void remove(String path) 
+	{
+		events.child(path).removeValue();
+	}
+	
+	/**
+	 * Read snapshot data
+	 */
+	@Kroll.method
+	public Object getData(@Kroll.argument(optional=true) String path) 
+	{
+		if (data == null) {
+			return null;
+		}
+		if (path != null) {
+			return data.child(path).getValue();
+		} else {
+			return data.getValue();
+		}
+	}
+	
+	/**
 	 * Push a new item to a dataset
 	 * @param args HashMaps {collection:'events', data:{...}}
 	 */
 	@Kroll.method
-	public void setValue(HashMap args) 
+	public void setValue(String collection, HashMap args) 
 	{
-		events.getRoot().child(args.get("collection").toString()).setValue(args.get("data"));
+		events.getRoot().child(collection).setValue(args);
 	}
 	
 	@Kroll.method
