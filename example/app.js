@@ -12,28 +12,17 @@ var label = Ti.UI.createLabel();
 win.add(label);
 win.open();
 
-// TODO: write your module tests here
-var firebaseti = require('com.mlabieniec.ti.firebase');
-Ti.API.info("module is => " + firebaseti);
+var Firebase = require('firebase');
+var fb = new Firebase("events");
 
-label.text = firebaseti.example();
+var date = new Date();
+var path = date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate() + "/" + date.getHours();
 
-Ti.API.info("module exampleProp is => " + firebaseti.exampleProp);
-firebaseti.exampleProp = "This is a test value";
+if (fb.isConnected) {
+	fb.append(path,options.data);
+}
 
-if (Ti.Platform.name == "android") {
-	var proxy = firebaseti.createExample({
-		message: "Creating an example Proxy",
-		backgroundColor: "red",
-		width: 100,
-		height: 100,
-		top: 100,
-		left: 150
-	});
+label.text = "Appending to collection: " + path;
 
-	proxy.printMessage("Hello world!");
-	proxy.message = "Hi world!.  It's me again.";
-	proxy.printMessage("Hello world!");
-	win.add(proxy);
 }
 
