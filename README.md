@@ -39,10 +39,19 @@ This is a native module for communicating with Firebase. It allows you to listen
 			if (args.complete) args.complete(data);
 		},changeHandler);
     
-"ref" is the name of your firebase collection you want to listen to changes for, i.e. You would reference it on your firebase like: https://myfirebase.firebaseio.com/ref. You can then listen for property changes on collections in firebase with a propertyChangeHandler:
-    
-    firebase.addEventListener("propertyChange",changeHandler);
-    
-    function propertyChangeHandler(e) {
-    	   alert('Firebase Change\n: ' + e);
-    }
+
+"path" is the name of your firebase collection you want to listen to changes for, i.e. You would reference it on your firebase like: https://myfirebase.firebaseio.com/ref. You can then listen for property changes on collections in firebase with a propertyChangeHandler. You can listen on multiple collections by using the provided lib/firebase.js library and creating new instances of the module:
+
+    var Firebase = require('firebase');
+    var instance = new Firebase('collection');
+    instance.connect({
+        change:function(data) {
+        	Ti.API.info("Remote Firebase change to: " + data);
+        	var json = JSON.parse(data);
+        	...
+        },
+        complete:funciton(e) {
+        	Ti.API.info("Firebase authenticated and connected");
+        }
+    );
+>>>>>>> 6615b8b5d939a9d08168baf0671335c8c4260304
