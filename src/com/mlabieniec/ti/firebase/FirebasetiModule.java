@@ -17,7 +17,6 @@ import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.KrollPropertyChange;
 import org.appcelerator.kroll.KrollProxy;
 import org.appcelerator.kroll.annotations.Kroll;
-
 import org.appcelerator.titanium.TiApplication;
 import org.appcelerator.kroll.common.Log;
 import org.json.JSONArray;
@@ -26,6 +25,7 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.widget.Toast;
 
+import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.Firebase.AuthListener;
@@ -270,32 +270,33 @@ public class FirebasetiModule extends KrollModule
 		});
 		
 		// Read data and react to changes
-		events.addValueEventListener(new ValueEventListener() {
-	
-		    @Override
-		    public void onDataChange(DataSnapshot snap) {
-		        Log.d(TAG,snap.getName() + " -> " + snap.getValue());
-		        data = snap;
-		        if (changeHandler != null) {
-		        	HashMap<String, Object> args = new HashMap<String, Object>();
-		        	//JSONArray json = new JSONArray(Arrays.asList(snap.getValue()));
-		        	String json = new Gson().toJson(snap.getValue());
-		        	args.put("callback", changeHandler);
-					args.put("data", json);
-					callThisCallbackDirectly(args);
-		        } 
-		        //else {
-		        //	setPropertyAndFire(snap.getName(),snap.getValue());
-		        //}
-		    }
-	
-			@Override
-			public void onCancelled(FirebaseError error) {
-				// TODO Auto-generated method stub
-				Log.d(TAG,"FirebaseError: " + error.getCode() + " " + error.getMessage());
-				
-			}
-		});
+		if (changeHandler != null) {
+			
+			events.addValueEventListener(new ValueEventListener() {
+		
+			    @Override
+			    public void onDataChange(DataSnapshot snap) {
+			        Log.d(TAG,snap.getName() + " -> " + snap.getValue());
+			        data = snap;
+			        if (changeHandler != null) {
+			        	HashMap<String, Object> args = new HashMap<String, Object>();
+			        	String json = new Gson().toJson(snap.getValue());
+			        	args.put("callback", changeHandler);
+						args.put("data", json);
+						callThisCallbackDirectly(args);
+			        } else {
+			        	setPropertyAndFire(snap.getName(),snap.getValue());
+			        };
+			    }
+		
+				@Override
+				public void onCancelled(FirebaseError error) {
+					Log.d(TAG,"FirebaseError: " + error.getCode() + " " + error.getMessage());
+					
+				}
+			});
+			
+		}
 		
 		// Finally, a little indication of connection status
         connectedListener = events.getRoot().child(".info/connected").addValueEventListener(new ValueEventListener() {
@@ -314,6 +315,91 @@ public class FirebasetiModule extends KrollModule
 				Log.d(TAG,"FirebaseError: " + error.getCode() + " " + error.getMessage());
 			}
         });
+	}
+	
+	@Kroll.method
+	public void valueListener(String ref, KrollFunction change) {
+		if (events != null) {
+			final KrollFunction changeHandler = change;
+			Firebase ch = events.child(ref);
+			ch.addValueEventListener(new ValueEventListener() {
+				HashMap<String, Object> args = new HashMap<String, Object>();
+				String json;
+				@Override
+				public void onDataChange(DataSnapshot snapshot) {
+					json = new Gson().toJson(snapshot.getValue());
+		        	args.put("callback", changeHandler);
+					args.put("data", json);
+					callThisCallbackDirectly(args);
+				}
+				
+				@Override
+				public void onCancelled(FirebaseError err) {
+					Log.e(TAG, "FirebaseError child.onCancelled: " + err.getMessage());
+				}
+			});
+		}
+	}
+	
+	@Kroll.method
+	public void childListener(String ref, KrollFunction change) {
+		
+		if (events != null) {
+			
+			final KrollFunction changeHandler = change;
+			Firebase ch = events.child(ref);
+			Log.d(TAG,"adding childListener: " + ref);
+			ch.addChildEventListener(new ChildEventListener() {
+				
+				HashMap<String, Object> args = new HashMap<String, Object>();
+				String json;
+				
+				@Override
+				public void onChildRemoved(DataSnapshot snapshot) {
+					json = new Gson().toJson(snapshot.getValue());
+		        	args.put("callback", changeHandler);
+					args.put("data", json);
+					callThisCallbackDirectly(args);
+				}
+				
+				@Override
+				public void onChildMoved(DataSnapshot snapshot, String arg1) {
+					json = new Gson().toJson(snapshot.getValue());
+		        	args.put("callback", changeHandler);
+					args.put("data", json);
+					callThisCallbackDirectly(args);
+				}
+				
+				/**
+				 * snapshot - An immutable snapshot of the data at the new data at the child location
+				 * previousChildName - The key name of sibling location ordered before the child. 
+				 * 					   This will be null for the first child node of a location.
+				 */
+				@Override
+				public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+		        	json = new Gson().toJson(snapshot.getValue());
+		        	args.put("callback", changeHandler);
+					args.put("data", json);
+					callThisCallbackDirectly(args);
+				}
+				
+				@Override
+				public void onChildAdded(DataSnapshot snapshot, String arg1) {
+					json = new Gson().toJson(snapshot.getValue());
+		        	args.put("callback", changeHandler);
+					args.put("data", json);
+					callThisCallbackDirectly(args);
+				}
+				
+				@Override
+				public void onCancelled(FirebaseError err) {
+					Log.e(TAG, "FirebaseError child.onCancelled: " + err.getMessage());
+				}
+			});
+			
+		} else {
+			Log.e(TAG, "Tried creating a child listener but root is null, is firebase authenticated and connected?");
+		}
 	}
 	
 	@Kroll.method
@@ -391,7 +477,7 @@ public class FirebasetiModule extends KrollModule
 	}
 	
 	@Kroll.method
-	public void updateChildren(String collection, HashMap map, Object cb) 
+	public void updateChildren(String collection, HashMap map) 
 	{
 		events.getRoot().child(collection).updateChildren(map);
 	}

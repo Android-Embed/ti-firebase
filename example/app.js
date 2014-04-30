@@ -23,6 +23,3 @@ if (fb.isConnected) {
 }
 
 label.text = "Appending to collection: " + path;
-
-}
-
