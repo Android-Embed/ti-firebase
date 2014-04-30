@@ -1,25 +1,37 @@
-// This is a test harness for your module
-// You should do something interesting in this harness 
-// to test out the module and to provide instructions 
-// to users on how to use it by example.
-
-
-// open a single window
-var win = Ti.UI.createWindow({
-	backgroundColor:'white'
-});
-var label = Ti.UI.createLabel();
-win.add(label);
-win.open();
-
+// create the library class
 var Firebase = require('firebase');
-var fb = new Firebase("events");
+var firebase = new Firebase();
 
-var date = new Date();
-var path = date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate() + "/" + date.getHours();
+var settingsChangeHandler = function(data) {
 
-if (fb.isConnected) {
-	fb.append(path,options.data);
+	Ti.API.info("remote data changed: " + data);
+	// do something with the remote data
+	var remote = JSON.parse(data);
+
+}; 
+
+firebase.connect({
+	complete:function(data) {
+		Ti.API.info("Firebase Connected: " + JSON.stringify(data));
+		// create a new child listener on /settings
+		firebase.child({path:"settings",change:settingsChangeHandler});
+	}
+});
+
+// Create a new node
+function push() {
+
+	var data = {
+		"data" : {
+			"id":"123",
+			"this":"is",
+			"a":"example"
+		}
+	}
+
+	firebase.push({
+		collection:"root",
+		data:data
+	});
+
 }
-
-label.text = "Appending to collection: " + path;

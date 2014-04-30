@@ -1,12 +1,37 @@
 ### Titanium Native Firebase Module for Android
 
+## Setup
+Compile the native module and install into your app. Than drop example/lib/firebase.js into your app/lib directory and use in your app:
+
+    var Firebase = require('firebase');
+    var firebase = new Firebase();
+
+    var data = {
+		"data" : {
+			"id":"123",
+			"this":"is",
+			"a":"example"
+		}
+	}
+
+	firebase.push({
+		collection:"root",
+		data:data
+	});
+
 ## Titanium Studio
 Compile the module into your titanium project. From Titanium Studio, in the app explorer,  Click "Publish" and "Package Android Module". This will compile and package into your Titanium Project.
 
 ## Manual Install
-Just unzip the dist/com.mlabieniec.ti.firebase-android-0.0.1.zip to your modules/android/ folder, and select it (or add it to) from the available modules in your tiapp.xml.
+Just unzip the dist/com.mlabieniec.ti.firebase-android-0.1.0.zip to your modules/android/ folder, and select it (or add it to) from the available modules in your tiapp.xml.
 
 This is a native module for communicating with Firebase. It allows you to listen for change events on firebase collections. This is a work in progress and offers minimal functionality right now. Soon we will have an alloy sync adapter that abstracts the Firebase logic so that you can work with standard models in alloy.
+	
+	var changeHandler = function(data) {
+		Ti.API.info("New Data! " + data);
+		var parsedJson = JSON.parse(data);
+		var name = data.name;
+	};
 
     var instance = require('com.mlabieniec.ti.firebase');
     instance.init(Firebase.config.url, Firebase.config.key, path, function(data) {
@@ -21,4 +46,3 @@ This is a native module for communicating with Firebase. It allows you to listen
     function propertyChangeHandler(e) {
     	   alert('Firebase Change\n: ' + e);
     }
-    

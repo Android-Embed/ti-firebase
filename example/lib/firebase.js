@@ -1,11 +1,18 @@
 /**
+ * This component handles communication and syncing with Firebase
+ */
+
+/**
  * Constructor
  */
-function Firebase(child) {
+function Firebase(ref) {
 	
-	var instance = require('com.mlabieniec.ti.firebase');
-	var path = Titanium.Platform.macaddress + "/" + child;
+	var instance = Firebase.mod;
+	var path = "/" + ref + "/";
 	var that = this;
+	
+	// A static reference to the root path
+	Firebase.root = path;
 	
 	/**
 	 * Connects to a Firebase
@@ -14,13 +21,29 @@ function Firebase(child) {
 	 */
 	this.connect = function(args) {
 		// The path is always prepended with this devices mac address
-		Ti.API.info("Firebase connecting to: " + path);
+		Ti.API.debug("Firebase connecting to: " + path);
 		var changeHandler = (args.change)?args.change:null;
 		// initialize the native module
 		instance.init(Firebase.config.url, Firebase.config.key, path, function(data) {
 			that.isConnected = true;
+			Firebase.isConnected = true;
 			if (args.complete) args.complete(data);
 		},changeHandler);
+	};
+	
+	/**
+	 * Listens on a child for changes
+	 * @param {Object} args {child:'some/child/path', change:Function}
+	 */
+	this.child = function(args) {
+		if (that.isConnected) {
+			if (!args.path) { Ti.API.error("No child specified"); return; };
+			Ti.API.debug("Adding Listener to Firebase child: " + args.path);
+			var changeHandler = (args.change)?args.change:null;
+			instance.valueListener(args.path,args.change);
+		} else {
+			Ti.API.error("Tried adding a child but NOT connected");
+		}
 	};
 	
 	/**
@@ -49,7 +72,7 @@ function Firebase(child) {
 	};
 	
 	/**
-	 * Updates a collections children
+	 * Updates the default root children
 	 */
 	this.update = function(data) {
 		instance.updateChildren(path,data,null);
@@ -76,7 +99,26 @@ function Firebase(child) {
  */
 Firebase.config = {
 	url:"https://YOUR_FIREBASE.firebaseIO.com",
-	key:"YOUR_FIREBASE_SECRET_KEY"
+	key:"SECRET_API_KEY"
 };
 
+/**
+ * Connection status
+ */
+Firebase.isConnected = false;
+
+/**
+ * Firebase root collection node
+ */
+Firebase.root = Titanium.Platform.macaddress;
+
+
+/**
+ * Native module
+ */
+Firebase.mod = require('com.mlabieniec.ti.firebase');
+
+/**
+ * CommonJS module
+ */
 module.exports = Firebase;
