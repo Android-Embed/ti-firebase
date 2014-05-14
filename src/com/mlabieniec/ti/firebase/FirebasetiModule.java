@@ -447,7 +447,7 @@ public class FirebasetiModule extends KrollModule
 	@Kroll.method
 	public void remove(String path) 
 	{
-		events.child(path).removeValue();
+		events.getRoot().child(path).removeValue();
 	}
 	
 	/**
