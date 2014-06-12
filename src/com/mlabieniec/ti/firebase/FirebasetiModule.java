@@ -342,6 +342,30 @@ public class FirebasetiModule extends KrollModule
 	}
 	
 	@Kroll.method
+	public void singleValueListener(String ref, KrollFunction change) {
+		if (events != null) {
+			final KrollFunction changeHandler = change;
+			Firebase ch = events.child(ref);
+			ch.addListenerForSingleValueEvent(new ValueEventListener() {
+				HashMap<String, Object> args = new HashMap<String, Object>();
+				String json;
+				@Override
+				public void onDataChange(DataSnapshot snapshot) {
+					json = new Gson().toJson(snapshot.getValue());
+		        	args.put("callback", changeHandler);
+					args.put("data", json);
+					callThisCallbackDirectly(args);
+				}
+				
+				@Override
+				public void onCancelled(FirebaseError err) {
+					Log.e(TAG, "FirebaseError child.onCancelled: " + err.getMessage());
+				}
+			});
+		}
+	}
+	
+	@Kroll.method
 	public void childListener(String ref, KrollFunction change) {
 		
 		if (events != null) {
@@ -456,13 +480,11 @@ public class FirebasetiModule extends KrollModule
 	@Kroll.method
 	public Object getData(@Kroll.argument(optional=true) String path) 
 	{
-		if (data == null) {
-			return null;
-		}
 		if (path != null) {
-			return data.child(path).getValue();
+			Log.d(TAG,"Getting data for: " + path);
+			return events.getRoot().child(path);
 		} else {
-			return data.getValue();
+			return events;
 		}
 	}
 	
